@@ -1,0 +1,8 @@
+playwright
+flask
+gunicorn
+python-dotenv
+celery
+gevent
+redis
+pillow
