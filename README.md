@@ -128,4 +128,5 @@ MAX_SCREENSHOTS = 5
 SCREENSHOT_JPEG_QUALITY = 85
 BROWSER_HEIGHT = 2000
 BROWSER_WIDTH = 1280
+USER_AGENT = "Mozilla/5.0 (compatible; Abbey/1.0; +https://github.com/US-Artificial-Intelligence/scraper)"
 ```

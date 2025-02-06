@@ -13,6 +13,7 @@ MAX_SCREENSHOTS = 5
 SCREENSHOT_JPEG_QUALITY = 85
 BROWSER_HEIGHT = 2000
 BROWSER_WIDTH = 1280
+USER_AGENT = "Mozilla/5.0 (compatible; Abbey/1.0; +https://github.com/US-Artificial-Intelligence/scraper)"
 
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 CELERY_BROKER_URL = "redis://localhost:6379/0"
@@ -52,7 +53,7 @@ def scrape_task(url, wait):
         with sync_playwright() as p:
             # Should be resilient to untrusted websites
             browser = p.firefox.launch(headless=True, timeout=10_000)  # 10s startup timeout
-            context = browser.new_context(viewport={"width": BROWSER_WIDTH, "height": BROWSER_HEIGHT}, accept_downloads=True)
+            context = browser.new_context(viewport={"width": BROWSER_WIDTH, "height": BROWSER_HEIGHT}, accept_downloads=True, user_agent=USER_AGENT)
             
             page = context.new_page()
 
