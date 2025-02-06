@@ -48,7 +48,7 @@ The only other path is `/scrape`, to which you send a JSON formatted POST reques
 
 The response will be either:
 
-- Status 200: m`ultipart/mixed` response where the first part is type `application/json` with information about the request; the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots.
+- Status 200: `multipart/mixed` response where the first part is type `application/json` with information about the request; the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots.
 - Not status 200: `application/json` response with an error message under the "error" key.
 
 Here's a sample cURL request:
@@ -65,6 +65,7 @@ Here is a code example using Python and the requests_toolbelt library to let you
 import requests
 from requests_toolbelt.multipart.decoder import MultipartDecoder
 import sys
+import json
 
 data = {
     'url': "https://us.ai"
@@ -75,8 +76,7 @@ headers = {
 }
 
 response = requests.post('http://localhost:5006/scrape', json=data, headers=headers, timeout=30)
-
-if response.status !== 200:
+if response.status_code != 200:
     my_json = response.json()
     message = my_json['error']
     print(f"Error scraping: {message}", file=sys.stderr)
@@ -92,17 +92,17 @@ else:
             # ...
         elif i == 1:  # Next is the actual content of the page
             content = part.content
-            headers = part.headers
+            headers = part.headers  # Will contain info about the content (text/html, application/pdf, etc.)
             # ...
         else:  # Other parts are screenshots, if they exist
             img = part.content
-            headers = part.headers
+            headers = part.headers  # Will tell you the image format
             # ...
 ```
 
 ## Security Considerations
 
-Navigating to untrusted websites is a serious security problem. Risks are somewhat mitigated in the following ways:
+Navigating to untrusted websites is a serious security issue. Risks are somewhat mitigated in the following ways:
 
 - Runs as isolated container (container isolation)
 - Each website is scraped in a new browser context (process isolation)
