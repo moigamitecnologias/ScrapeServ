@@ -107,9 +107,26 @@ def scrape():
 
     wait = max(min(int(request.json.get('wait', 1000)), 5000), 0)  # Clamp between 0-5000ms
 
+    # Determine the image format from the Accept header
+    accept_header = request.headers.get('Accept', 'image/jpeg')
+    accepted_formats = {
+        'image/webp': 'webp',
+        'image/png': 'png',
+        'image/jpeg': 'jpeg'
+    }
+
+    image_format = accepted_formats.get(accept_header)
+    if not image_format:
+        accepted_formats_list = ', '.join(accepted_formats.keys())
+        return jsonify({
+            'error': f'Unsupported image format in Accept header. Accepted formats are: {accepted_formats_list}'
+        }), 406
+
     content_file = None
     try:
-        status, headers, content_file, screenshot_files, metadata = scrape_task.apply_async(args=[url, wait], kwargs={}).get(timeout=60)  # 60 seconds
+        status, headers, content_file, screenshot_files, metadata = scrape_task.apply_async(
+            args=[url, wait, image_format], kwargs={}
+        ).get(timeout=60)  # 60 seconds
         headers = {str(k).lower(): v for k, v in headers.items()}  # make headers all lowercase (they're case insensitive)
     except Exception as e:
         # If scrape_in_child uses too much memory, it seems to end up here.
@@ -141,12 +158,12 @@ def scrape():
 
             # Give screenshot images
             for ss in screenshot_files:
-                yield f"--{boundary}\r\nContent-Type: image/jpeg\r\n\r\n".encode()  # beginning of content
+                yield f"--{boundary}\r\nContent-Type: image/{image_format}\r\n\r\n".encode()  # beginning of content
                 with open(ss, 'rb') as content:
                     for line in content:
                         yield line
                 yield "\r\n".encode()  # end of content
-            
+
             # End boundary
             yield f"--{boundary}--\r\n".encode()
 

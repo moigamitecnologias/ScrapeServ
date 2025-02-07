@@ -11,7 +11,7 @@ import sys
 MEM_LIMIT_MB = 4_000  # 4 GB memory threshold for child scraping process
 MAX_CONCURRENT_TASKS = 3
 MAX_SCREENSHOTS = 5
-SCREENSHOT_JPEG_QUALITY = 85
+SCREENSHOT_QUALITY = 85
 BROWSER_HEIGHT = 2000
 BROWSER_WIDTH = 1280
 USER_AGENT = "Mozilla/5.0 (compatible; Abbey/1.0; +https://github.com/US-Artificial-Intelligence/scraper)"
@@ -33,7 +33,7 @@ def make_celery():
 celery = make_celery()
 
 @celery.task
-def scrape_task(url, wait):
+def scrape_task(url, wait, image_format):
 
     # Memory limits for the task process
     soft, hard = (MEM_LIMIT_MB * 1024 * 1024, MEM_LIMIT_MB * 1024 * 1024)
@@ -55,7 +55,7 @@ def scrape_task(url, wait):
             # Should be resilient to untrusted websites
             browser = p.firefox.launch(headless=True, timeout=10_000)  # 10s startup timeout
             context = browser.new_context(viewport={"width": BROWSER_WIDTH, "height": BROWSER_HEIGHT}, accept_downloads=True, user_agent=USER_AGENT)
-            
+
             page = context.new_page()
 
             # Set various security headers and limits
@@ -89,7 +89,7 @@ def scrape_task(url, wait):
                 if substr in str(e):
                     # If I use this around the first response, a timeout will occur when there's no download.
                     # But there's still the same exception to handle even with the expect download... playwright can be hell sometimes
-                    with page.expect_download() as download_info:  
+                    with page.expect_download() as download_info:
                         try:
                             if response and response.status == 302:
                                 loc = response.headers.get('location')
@@ -109,14 +109,14 @@ def scrape_task(url, wait):
                                 raise e
                 else:
                     raise e
-            
+
             if not response:
-                raise Exception("Response was none") 
+                raise Exception("Response was none")
 
             status = response.status
             headers = dict(response.headers) if response else {}
             content_type = headers.get("content-type", "").lower()
-            
+
             if status >= 400:
                 pass
             elif not processing_download:
@@ -127,7 +127,7 @@ def scrape_task(url, wait):
                 # If this is an HTML page, take screenshots
                 if "text/html" in content_type:
                     page.wait_for_timeout(wait)
-                    
+
                     # Get total page height
                     total_height = page.evaluate("() => document.documentElement.scrollHeight")
 
@@ -137,10 +137,10 @@ def scrape_task(url, wait):
                     metadata['truncated_screenshots_n'] = num_segments
 
                     raw_screenshot_files = []
-                    
+
                     for i in range(num_segments):
                         tmp = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
-                        
+
                         start_y = i * BROWSER_HEIGHT
                         page.evaluate(f"window.scrollTo(0, {start_y})")
                         page.wait_for_timeout(wait)
@@ -155,10 +155,10 @@ def scrape_task(url, wait):
                                 "height": BROWSER_HEIGHT
                             }
                         )
-                        
+
                         raw_screenshot_files.append(tmp.name)
                         tmp.close()
-                
+
                 # If not text/html, just retrieve the raw bytes
                 # Note that if not text/html, might've been caught by the download stuff above
                 file_bytes = response.body()
@@ -171,7 +171,7 @@ def scrape_task(url, wait):
         content_file_tmp.close()
         os.remove(content_file)
         raise e
-    
+
     # Compress the screenshot files
     compressed_screenshot_files = []
     for ss in raw_screenshot_files:
@@ -181,7 +181,7 @@ def scrape_task(url, wait):
             with Image.open(ss) as img:
                 if img.mode == 'RGBA':  # Will throw an error unless converted
                     img = img.convert('RGB')
-                img.save(tmp.name, 'JPEG', quality=SCREENSHOT_JPEG_QUALITY)                
+                img.save(tmp.name, image_format.upper(), quality=SCREENSHOT_QUALITY)
             c_size = os.path.getsize(tmp.name)
             metadata['image_sizes'] = {
                 'original': o_size,
