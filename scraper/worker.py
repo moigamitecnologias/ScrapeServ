@@ -9,6 +9,7 @@ import sys
 
 
 MEM_LIMIT_MB = 4_000  # 4 GB memory threshold for child scraping process
+MAX_CONCURRENT_TASKS = 3
 MAX_SCREENSHOTS = 5
 SCREENSHOT_JPEG_QUALITY = 85
 BROWSER_HEIGHT = 2000
@@ -24,7 +25,7 @@ def make_celery():
         broker=CELERY_BROKER_URL
     )
     celery.conf.update(
-        worker_concurrency=3,  # Limit number of concurrent tasks
+        worker_concurrency=MAX_CONCURRENT_TASKS,  # Limit number of concurrent tasks
     )
 
     return celery

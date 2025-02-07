@@ -20,15 +20,13 @@ The server worker process spawned by gunicorn itself maintains a separate pool o
 
 Upon a request to /scrape, the gunicorn worker asks the pool for a process to run a scrape, which spawns an isolated browser context.
 
-The scrape workers are limited in their memory usage to 3 GB, of which there may be 4.
+The scrape workers' memory usage and number are limited by constants set in worker.py.
 
 """
 
 # For optional API key
 load_dotenv()  # Load in API keys
 SCRAPER_API_KEYS = [value for key, value in os.environ.items() if key.startswith('SCRAPER_API_KEY')]
-
-MAX_SCREENSHOT_SIZE_MB = 500
 
 
 @app.route('/')
