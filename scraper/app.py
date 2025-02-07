@@ -96,7 +96,7 @@ def scrape():
 
         user_key = auth_header.split(' ')[1]
         if user_key not in SCRAPER_API_KEYS:
-            return jsonify({'error': 'Invalid API key'}), 301
+            return jsonify({'error': 'Invalid API key'}), 401
 
     url = request.json.get('url')
 
@@ -146,7 +146,7 @@ def scrape():
                     for line in content:
                         yield line
                 yield "\r\n".encode()  # end of content
-            
+
             # End boundary
             yield f"--{boundary}--\r\n".encode()
 
