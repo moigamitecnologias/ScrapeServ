@@ -1,4 +1,4 @@
-# ScrapeServe: Simple URL 🌐 to screenshots 📷 server
+# ScrapeServ: Simple URL 🌐 to screenshots 📷 server
 
 You run the API on your machine, you send it a URL, and you get back the website data as a file plus screenshots of the site. Simple as.
 
