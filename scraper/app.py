@@ -112,14 +112,16 @@ def scrape():
     accepted_formats = {
         'image/webp': 'webp',
         'image/png': 'png',
-        'image/jpeg': 'jpeg'
+        'image/jpeg': 'jpeg',
+        'image/*': 'jpeg',
+        '*/*': 'jpeg'
     }
 
     image_format = accepted_formats.get(accept_header)
     if not image_format:
         accepted_formats_list = ', '.join(accepted_formats.keys())
         return jsonify({
-            'error': f'Unsupported image format in Accept header. Accepted formats are: {accepted_formats_list}'
+            'error': f'Unsupported image format in Accept header ({accept_header}). Supported Accept header values are: {accepted_formats_list}'
         }), 406
 
     content_file = None
