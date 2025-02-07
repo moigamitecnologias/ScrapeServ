@@ -44,7 +44,7 @@ API keys are sent to the service using the Authorization Bearer scheme.
 
 The root path `/` returns status 200 if online, plus some Gilbert and Sullivan lyrics (you can go there in your browser to see if it's online).
 
-The only other path is `/scrape`, to which you send a JSON formatted POST request and (if all things go well) receive a `multipart/mixed` type response. You could provide the desired output image format as Accept header MIME type. If no Accept header is provided, the screenshots are saved by default in JPEG format. The following values are supported:
+The only other path is `/scrape`, to which you send a JSON formatted POST request and (if all things go well) receive a `multipart/mixed` type response. You could provide the desired output image format as Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are saved by default in JPEG format. The following values are supported:
 - image/webp
 - image/png
 - image/jpeg
