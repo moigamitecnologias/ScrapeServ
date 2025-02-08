@@ -2,10 +2,11 @@
 
 You run the API on your machine, you send it a URL, and you get back the website data as a file plus screenshots of the site. Simple as.
 
-<div style="display:flex;justify-content:center;margin: 1rem 0px;">
-<img alt="poster" height="300px" src="poster.webp" />
+<br/>
+<div align="center" style="display:flex;justify-content:center;margin: 2rem 0px;">
+<img alt="poster" height="350px" src="poster.webp" />
 </div>
-
+<br/>
 
 This project was made to support [Abbey](https://github.com/US-Artificial-Intelligence/abbey), an AI platform. Its author is [Gordon Kamer](https://x.com/gkamer8).
 
