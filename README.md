@@ -42,19 +42,21 @@ API keys are sent to the service using the Authorization Bearer scheme.
 
 ## Usage
 
-The root path `/` returns status 200 if online, plus some Gilbert and Sullivan lyrics (you can go there in your browser to see if it's online).
+**Look in [client](client/README.md) for a full reference implementation in Python**
 
-The only other path is `/scrape`, to which you send a JSON formatted POST request and (if all things go well) receive a `multipart/mixed` type response. You could provide the desired output image format as Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are saved by default in JPEG format. The following values are supported:
+The root path `/` returns status 200 if online, plus some Gilbert and Sullivan lyrics (you can go there in your browser to see if it's working).
+
+The only other path is `/scrape`, to which you send a JSON formatted POST request and (if all things go well) receive a `multipart/mixed` type response. You could provide the desired output image format as an Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are saved by default in JPEG format. The following values are supported:
 - image/webp
 - image/png
 - image/jpeg
 
-The response will be either:
+Every response from the API will be either:
 
-- Status 200: `multipart/mixed` response where the first part is type `application/json` with information about the request; the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots.
-- Not status 200: `application/json` response with an error message under the "error" key.
+- Status 200: `multipart/mixed` response where: the first part is of type `application/json` with information about the request (includes `status`, `headers`, and `metadata`); the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots. Each part contains a `Content-Type` header with its MIME type.
+- Not status 200: `application/json` response with an error message under the "error" key
 
-Here's a sample cURL request:
+Here's a sample cURL request, which will return some long response if everything's working properly:
 
 ```
 curl -X POST "http://localhost:5006/scrape"
@@ -62,46 +64,7 @@ curl -X POST "http://localhost:5006/scrape"
     -d '{"url": "https://us.ai"}'
 ```
 
-Here is a code example using Python and the requests_toolbelt library to let you interact with the API properly:
-
-```
-import requests
-from requests_toolbelt.multipart.decoder import MultipartDecoder
-import sys
-import json
-
-data = {
-    'url': "https://us.ai"
-}
-# Optional if you're using an API key
-headers = {
-    'Authorization': f'Bearer Your-API-Key'
-}
-
-response = requests.post('http://localhost:5006/scrape', json=data, headers=headers, timeout=30)
-if response.status_code != 200:
-    my_json = response.json()
-    message = my_json['error']
-    print(f"Error scraping: {message}", file=sys.stderr)
-else:
-    decoder = MultipartDecoder.from_response(response)
-    resp = None
-    for i, part in enumerate(decoder.parts):
-        if i == 0:  # First is some JSON
-            json_part = json.loads(part.content)
-            req_status = json_part['status']  # An integer
-            req_headers = json_part['headers']  # Headers from the request made to your URL
-            metadata = json_part['metadata']  # Information like the number of screenshots and their compressed / uncompressed sizes
-            # ...
-        elif i == 1:  # Next is the actual content of the page
-            content = part.content
-            headers = part.headers  # Will contain info about the content (text/html, application/pdf, etc.)
-            # ...
-        else:  # Other parts are screenshots, if they exist
-            img = part.content
-            headers = part.headers  # Will tell you the image format
-            # ...
-```
+Refer to the [client](client/README.md) for a full reference implementation, which shows you how to call the API and save the files it sends back.
 
 ## Security Considerations
 
@@ -110,7 +73,7 @@ Navigating to untrusted websites is a serious security issue. Risks are somewhat
 - Runs as isolated container (container isolation)
 - Each website is scraped in a new browser context (process isolation)
 - Strict memory limits and timeouts for each task
-- Checks the URL to make sure that it's not too weird (loopback, non http, etc.)
+- Checks the URL to make sure that it's not too weird (loopback, local, non http, etc.)
 
 You may take additional precautions depending on your needs, like:
 
