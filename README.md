@@ -1,6 +1,8 @@
-# ScrapeServ: Simple URL 🌐 to screenshots 📷 server
+# ScrapeServ: Simple URL to screenshots server
 
 You run the API on your machine, you send it a URL, and you get back the website data as a file plus screenshots of the site. Simple as.
+
+![poster](poster.webp)
 
 This project was made to support [Abbey](https://github.com/US-Artificial-Intelligence/abbey), an AI platform. Its author is [Gordon Kamer](https://x.com/gkamer8).
 
