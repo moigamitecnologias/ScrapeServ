@@ -1,6 +1,6 @@
 # Client
 
-This client is made as a reference implementation in Python for how your app might parse a response from the API.
+This client is made as a reference implementation in Python for how your app might parse a response from the API. All code is in `client.py`.
 
 You should send an HTTP request and parse the multipart/mixed response (see the [standard](https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html)). The parts are as described in the project README.
 
