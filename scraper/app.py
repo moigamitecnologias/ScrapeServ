@@ -182,7 +182,7 @@ def scrape():
                     f"\r\n--{boundary}\r\n"
                     f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n"
                     "Content-Transfer-Encoding: binary\r\n"
-                    f"Content-Type: image/{image_format}\r\n\r\n"  # Fixed to "jpeg"
+                    f"Content-Type: image/{image_format}\r\n\r\n"
                 ).encode()
                 with open(ss, 'rb') as content:
                     while chunk := content.read(4096):
