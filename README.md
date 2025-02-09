@@ -32,45 +32,45 @@ You should have Docker and `docker compose` installed.
 
 ...and the service will be available at `http://localhost:5006`. See the Usage section below for details on how to interact with it.
 
-### API Keys
-
-You may set an API key using a `.env` file inside the `/scraper` folder (same level as `app.py`).
-
-You can set as many API keys as you'd like; allowed API keys are those that start with `SCRAPER_API_KEY`. For example, here is a `.env` file that has three available keys:
-
-```
-SCRAPER_API_KEY=should-be-secret
-SCRAPER_API_KEY_OTHER=can-also-be-used
-SCRAPER_API_KEY_3=works-too
-```
-
-API keys are sent to the service using the Authorization Bearer scheme.
-
 ## Usage
 
-**Look in [client](client/README.md) for a full reference implementation in Python**
+### From Your App
 
-The root path `/` returns status 200 if online, plus some Gilbert and Sullivan lyrics (you can go there in your browser to see if it's working).
+**Look in [client](client/README.md) for a full reference client implementation in Python.** Just send an HTTP request and process the response according to the [API reference](#api-reference) below.
 
-The only other path is `/scrape`, to which you send a JSON formatted POST request and (if all things go well) receive a `multipart/mixed` type response. You could provide the desired output image format as an Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are saved by default in JPEG format. The following values are supported:
+### From the Command Line on Mac/Linux
+
+You can use cURL and ripmime to interact with the API from the command line. Ripmime processes the `multipart/mixed` HTTP response and puts the downloaded files into a folder. Install [ripmime](https://pldaniels.com/ripmime/) using `brew install ripmime` on Mac or `apt-get install ripmime` on Linux. Then, paste this into your terminal:
+
+```
+curl -i -s -X POST "http://localhost:5006/scrape" \
+    -H "Content-Type: application/json" \
+    -d '{"url": "https://us.ai"}' \
+    | ripmime -i - -d outfolder --formdata --no-nameless
+```
+
+...replacing the URL and output folder name appropriately.
+
+### API Reference
+
+Path `/`: The root path returns status 200, plus some text to let you know the server's running if you visit the server in a web browser.
+
+Path `/scrape`: Accepts a JSON formatted POST request and returns a `multipart/mixed` response including the resource file, screenshots, and request header information.
+
+JSON formatted arguments:
+- `url`: the URL to scrape
+
+You can provide the desired output image format as an Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are returned by default as JPEGs. The following values are supported:
 - image/webp
 - image/png
 - image/jpeg
 
-Every response from the API will be either:
+Every response from `/scrape` will be either:
 
-- Status 200: `multipart/mixed` response where: the first part is of type `application/json` with information about the request (includes `status`, `headers`, and `metadata`); the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots. Each part contains a `Content-Type` header with its MIME type.
+- Status 200: `multipart/mixed` response where: the first part is of type `application/json` with information about the request (includes `status`, `headers`, and `metadata`); the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots. Each part contains `Content-Type` and `Content-Disposition` headers, from which you can infer their file formats.
 - Not status 200: `application/json` response with an error message under the "error" key
 
-Here's a sample cURL request, which will return some long response if everything's working properly:
-
-```
-curl -X POST "http://localhost:5006/scrape"
-    -H "Content-Type: application/json"
-    -d '{"url": "https://us.ai"}'
-```
-
-Refer to the [client](client/README.md) for a full reference implementation, which shows you how to call the API and save the files it sends back.
+Refer to the [client](client) for a full reference implementation, which shows you how to call the API and save the files it sends back. You can also save the returned files from the [command line](#from-the-command-line-on-maclinux).
 
 ## Security Considerations
 
@@ -89,6 +89,20 @@ You may take additional precautions depending on your needs, like:
 - Not making any secret files or keys available inside the container (besides the API key for the scraper itself)
 
 **If you'd like to make sure that this API is up to your security standards, please examine the code and open issues! It's not a big repo.**
+
+### API Keys
+
+If your scrape server is publicly accessible over the internet, you should set an API key using a `.env` file inside the `/scraper` folder (same level as `app.py`).
+
+You can set as many API keys as you'd like; allowed API keys are those that start with `SCRAPER_API_KEY`. For example, here is a `.env` file that has three available keys:
+
+```
+SCRAPER_API_KEY=should-be-secret
+SCRAPER_API_KEY_OTHER=can-also-be-used
+SCRAPER_API_KEY_3=works-too
+```
+
+API keys are sent to the service using the Authorization Bearer scheme.
 
 ## Other Configuration
 
