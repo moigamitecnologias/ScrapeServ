@@ -31,9 +31,10 @@ data = {
 }
 headers = {
     'Authorization': f'Bearer {args.api_key}',  # Optional: if you're using an API key
-    'Accept': f'image/{args.img_type}'
+    'Accept': f'image/{args.img_type}'  # Determines the file type for the screenshots
 }
 
+# Helper function to get the correct file extensions for the main resource and screenshots
 # includes dot unless blank
 def get_ext_from_headers(headers):
     content_type_bytes: bytes = headers[b'Content-Type']
@@ -44,16 +45,18 @@ def get_ext_from_headers(headers):
         return f"{extensions[0]}"
     return ""
 
+# Make the request to the API
 response = requests.post('http://localhost:5006/scrape', json=data, headers=headers, timeout=30)
-if response.status_code != 200:
+
+if response.status_code != 200:  # Handle errors
     my_json = response.json()
     message = my_json['error']
     print(f"Error scraping: {message}", file=sys.stderr)
-else:
-    decoder = MultipartDecoder.from_response(response)
+else:  # Scrape went through
+    decoder = MultipartDecoder.from_response(response)  # Response is type multipart/mixed
     resp = None
     for i, part in enumerate(decoder.parts):
-        if i == 0:  # First is some JSON
+        if i == 0:  # First is some JSON containing headers, status code, and other metadata
             json_part = json.loads(part.content)
             req_status = json_part['status']  # An integer
             req_headers: dict = json_part['headers']  # Headers from the request made to your URL
@@ -70,7 +73,7 @@ else:
             headers = part.headers  # Will contain info about the content (text/html, application/pdf, etc.)
             ext = get_ext_from_headers(headers)
             outfile = os.path.join(OUTFOLDER, f"main{ext}")
-            with open(outfile, 'wb') as fhand:
+            with open(outfile, 'wb') as fhand:  # Save the file
                 fhand.write(content)
 
             print(f"\nFile written to {outfile}.")

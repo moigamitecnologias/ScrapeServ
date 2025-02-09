@@ -1,6 +1,6 @@
 # ScrapeServ: Simple URL to screenshots server
 
-You run the API on your machine, you send it a URL, and you get back the website data as a file plus screenshots of the site. Simple as.
+You run the API as a web server on your machine, you send it a URL, and you get back the website data as a file plus screenshots of the site. Simple as.
 
 <br/>
 <div align="center" style="display:flex;justify-content:center;margin: 2rem 0px;">
