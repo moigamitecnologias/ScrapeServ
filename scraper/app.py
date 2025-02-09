@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import os
 from worker import scrape_task
 import json
+import mimetypes
 
 
 app = Flask(__name__)
@@ -84,6 +85,15 @@ def url_is_safe(url: str, allowed_schemes=None) -> bool:
     return True
 
 
+# Includes dot
+def get_ext_from_content_type(content_type: str):
+    mime_type = content_type.split(';')[0].strip()
+    extensions = mimetypes.guess_all_extensions(mime_type)
+    if len(extensions):
+        return f"{extensions[0]}"
+    return ""
+
+
 @app.route('/scrape', methods=('POST',))
 def scrape():
     if len(SCRAPER_API_KEYS):
@@ -143,33 +153,45 @@ def scrape():
         # See details on the standard here: https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
         def stream():
             # Start with headers and status as json
-            yield f"--{boundary}\r\nContent-Type: application/json\r\n\r\n".encode()  # beginning of content
-            yield json.dumps({
-                'status': status,
-                'headers': headers,
-                'metadata': metadata
-            })
-            yield "\r\n".encode()  # end of content
+            # JSON part with filename
+            filename = "info.json"
+            yield (
+                f"--{boundary}\r\n"
+                "Content-Type: application/json\r\n"
+                f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n\r\n"
+            ).encode()
+            yield json.dumps({'status': status, 'headers': headers, 'metadata': metadata}).encode()
 
-            # Give content as it was received
-            yield f"--{boundary}\r\nContent-Type: {headers['content-type']}\r\n\r\n".encode()  # beginning of content
+            # Main content (HTML/other)
+            ext = get_ext_from_content_type(headers['content-type'])
+            filename = f"main{ext}"
+            yield (
+                f"\r\n--{boundary}\r\n"
+                f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n"
+                "Content-Transfer-Encoding: binary\r\n"
+                f"Content-Type: {headers['content-type']}\r\n\r\n"
+            ).encode()
             with open(content_file, 'rb') as content:
-                for line in content:
-                    yield line
-            yield "\r\n".encode()  # end of content
+                while chunk := content.read(4096):
+                    yield chunk
 
-            # Give screenshot images
-            for ss in screenshot_files:
-                yield f"--{boundary}\r\nContent-Type: image/{image_format}\r\n\r\n".encode()  # beginning of content
+            # Screenshots (correct MIME type)
+            for i, ss in enumerate(screenshot_files):
+                filename = f"ss{i}.{image_format}"
+                yield (
+                    f"\r\n--{boundary}\r\n"
+                    f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n"
+                    "Content-Transfer-Encoding: binary\r\n"
+                    f"Content-Type: image/{image_format}\r\n\r\n"  # Fixed to "jpeg"
+                ).encode()
                 with open(ss, 'rb') as content:
-                    for line in content:
-                        yield line
-                yield "\r\n".encode()  # end of content
+                    while chunk := content.read(4096):
+                        yield chunk
 
-            # End boundary
-            yield f"--{boundary}--\r\n".encode()
+            # Final boundary
+            yield f"\r\n--{boundary}--\r\n".encode()
 
-        return stream(), 200, {'Content-Type': f'multipart/mixed; boundary="{boundary}"'}
+        return stream(), 200, {'Content-Type': f'multipart/mixed; boundary={boundary}'}
 
     else:
         return jsonify({
