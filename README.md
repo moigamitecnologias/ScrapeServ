@@ -8,7 +8,7 @@ You run the API as a web server on your machine, you send it a URL, and you get 
 </div>
 <br/>
 
-This project was made to support [Abbey](https://github.com/US-Artificial-Intelligence/abbey), an AI platform. Its author is [Gordon Kamer](https://x.com/gkamer8).
+This project was made to support [Abbey](https://github.com/goodreasonai/abbey), an AI platform. Its author is [Gordon Kamer](https://x.com/gkamer8).
 
 Some highlights:
 - Scrolls through the page and takes screenshots of different sections
