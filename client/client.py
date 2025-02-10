@@ -27,7 +27,7 @@ args = parser.parse_args()
 OUTFOLDER = args.out
 
 data = {
-    'url': args.url  # Like https://us.ai
+    'url': args.url  # Like https://goodreason.ai
 }
 headers = {
     'Authorization': f'Bearer {args.api_key}',  # Optional: if you're using an API key

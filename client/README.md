@@ -15,7 +15,7 @@ python3 -m pip install requests_toolbelt
 And run the client like:
 
 ```
-python3 client.py https://us.ai
+python3 client.py https://goodreason.ai
 ```
 
 If you'd prefer to use a library rather than copy this implementation, please create a GitHub issue. PRs welcome.
