@@ -15,7 +15,7 @@ Some highlights:
 - Runs in a docker container
 - Browser-based (will run websites' Javascript)
 - Gives you the HTTP status code and headers from the first request
-- Automatically handles 302 redirects
+- Automatically handles redirects
 - Handles download links properly
 - Tasks are processed in a queue with configurable memory allocation
 - Blocking API
@@ -45,7 +45,7 @@ You can use cURL and ripmime to interact with the API from the command line. Rip
 ```
 curl -i -s -X POST "http://localhost:5006/scrape" \
     -H "Content-Type: application/json" \
-    -d '{"url": "https://goodreason.ai"}' \
+    -d '{"url": "https://us.ai/transformers"}' \
     | ripmime -i - -d outfolder --formdata --no-nameless
 ```
 
