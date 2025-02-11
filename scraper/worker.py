@@ -64,6 +64,8 @@ def scrape_task(url, wait, image_format):
 
             processing_download = False
 
+            REDIRECT_STATUS_CODES = [301, 302, 303, 307, 308]  # Some in the 300s like Multiple Choice not included
+            
             # Handle response will work even if goto fails (i.e., for download).
             response = None
             def handle_response(_response):
@@ -72,7 +74,7 @@ def scrape_task(url, wait, image_format):
                 if _response.url == url:
                     response = _response
                 # ...or we just got a 302 and are going to a new URL to scrape
-                elif response and response.status == 302:
+                elif response and response.status in REDIRECT_STATUS_CODES:
                     response = _response
 
             page.on("response", handle_response)
@@ -81,7 +83,7 @@ def scrape_task(url, wait, image_format):
             # If a download is initiated, Playwright throws an error which you can then handle
             try:
                 response = page.goto(url)
-                if response and response.status == 302:
+                if response and response.status in REDIRECT_STATUS_CODES:
                     response = page.goto(response.headers.get('location'))
             except PlaywrightError as e:
                 # Unfortunately, a specific error isn't thrown - have to use the substring
@@ -91,7 +93,7 @@ def scrape_task(url, wait, image_format):
                     # But there's still the same exception to handle even with the expect download... playwright can be hell sometimes
                     with page.expect_download() as download_info:
                         try:
-                            if response and response.status == 302:
+                            if response and response.status in REDIRECT_STATUS_CODES:
                                 loc = response.headers.get('location')
                                 page.goto(loc)
                             else:
