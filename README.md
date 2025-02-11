@@ -45,7 +45,7 @@ You can use cURL and ripmime to interact with the API from the command line. Rip
 ```
 curl -i -s -X POST "http://localhost:5006/scrape" \
     -H "Content-Type: application/json" \
-    -d '{"url": "https://us.ai/transformers"}' \
+    -d '{"url": "https://goodreason.ai"}' \
     | ripmime -i - -d outfolder --formdata --no-nameless
 ```
 
