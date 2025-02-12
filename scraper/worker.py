@@ -7,13 +7,17 @@ import os
 from PIL import Image
 import sys
 
-
+# Server options
 MEM_LIMIT_MB = 4_000  # 4 GB memory threshold for child scraping process
 MAX_CONCURRENT_TASKS = 3
-MAX_SCREENSHOTS = 5
-SCREENSHOT_QUALITY = 85
-BROWSER_HEIGHT = 2000
-BROWSER_WIDTH = 1280
+DEFAULT_SCREENSHOTS = 5  # The max number of screenshots if the user doesn't set a max
+MAX_SCREENSHOTS = 10  # User cannot set max_screenshots above this value
+DEFAULT_WAIT = 1000  # Value for wait if a user doesn't set one (ms)
+MAX_WAIT = 5000  # A user cannot ask for more than this long of a wait (ms)
+SCREENSHOT_QUALITY = 85  # Argument to PIL image save
+DEFAULT_BROWSER_DIM = [1280, 2000]  # If a user doesn't set browser dimensions  Width x Height in pixels
+MAX_BROWSER_DIM = [2400, 4000]  # Maximum width and height a user can set
+MIN_BROWSER_DIM = [100, 100]  # Minimum width and height a user can set
 USER_AGENT = "Mozilla/5.0 (compatible; Abbey/1.0; +https://github.com/US-Artificial-Intelligence/scraper)"
 
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
@@ -33,7 +37,7 @@ def make_celery():
 celery = make_celery()
 
 @celery.task
-def scrape_task(url, wait, image_format):
+def scrape_task(url, wait, image_format, n_screenshots, browser_dim):
 
     # Memory limits for the task process
     soft, hard = (MEM_LIMIT_MB * 1024 * 1024, MEM_LIMIT_MB * 1024 * 1024)
@@ -54,7 +58,7 @@ def scrape_task(url, wait, image_format):
         with sync_playwright() as p:
             # Should be resilient to untrusted websites
             browser = p.firefox.launch(headless=True, timeout=10_000)  # 10s startup timeout
-            context = browser.new_context(viewport={"width": BROWSER_WIDTH, "height": BROWSER_HEIGHT}, accept_downloads=True, user_agent=USER_AGENT)
+            context = browser.new_context(viewport={"width": browser_dim[0], "height": browser_dim[1]}, accept_downloads=True, user_agent=USER_AGENT)
 
             page = context.new_page()
 
@@ -134,8 +138,8 @@ def scrape_task(url, wait, image_format):
                     total_height = page.evaluate("() => document.documentElement.scrollHeight")
 
                     # Calculate number of segments needed
-                    metadata['original_screenshots_n'] = math.ceil(total_height / BROWSER_HEIGHT)
-                    num_segments = min(metadata['original_screenshots_n'], MAX_SCREENSHOTS)
+                    metadata['original_screenshots_n'] = math.ceil(total_height / browser_dim[1])
+                    num_segments = min(metadata['original_screenshots_n'], n_screenshots)
                     metadata['truncated_screenshots_n'] = num_segments
 
                     raw_screenshot_files = []
@@ -143,7 +147,7 @@ def scrape_task(url, wait, image_format):
                     for i in range(num_segments):
                         tmp = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
 
-                        start_y = i * BROWSER_HEIGHT
+                        start_y = i * browser_dim[1]
                         page.evaluate(f"window.scrollTo(0, {start_y})")
                         page.wait_for_timeout(wait)
 
@@ -153,8 +157,8 @@ def scrape_task(url, wait, image_format):
                             clip={
                                 "x": 0,
                                 "y": 0,
-                                "width": BROWSER_WIDTH,
-                                "height": BROWSER_HEIGHT
+                                "width": browser_dim[0],
+                                "height": browser_dim[1]
                             }
                         )
 

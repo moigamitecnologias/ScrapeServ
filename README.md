@@ -58,7 +58,10 @@ Path `/`: The root path returns status 200, plus some text to let you know the s
 Path `/scrape`: Accepts a JSON formatted POST request and returns a `multipart/mixed` response including the resource file, screenshots, and request header information.
 
 JSON formatted arguments:
-- `url`: the URL to scrape
+- `url`: required, the URL to scrape, like `https://goodreason.ai`
+- `browser_dim`: optional, a list like [width, height] determining the dimensions of the browser
+- `wait`: optional, the number of milliseconds to wait after scrolling to take a screenshot (highly recommended >= 1000)
+- `max_screenshots`: optional, the maximum number of screenshots that will be returned
 
 You can provide the desired output image format as an Accept header MIME type. If no Accept header is provided (or if the Accept header is `*/*` or `image/*`), the screenshots are returned by default as JPEGs. The following values are supported:
 - image/webp
@@ -68,7 +71,7 @@ You can provide the desired output image format as an Accept header MIME type. I
 Every response from `/scrape` will be either:
 
 - Status 200: `multipart/mixed` response where: the first part is of type `application/json` with information about the request (includes `status`, `headers`, and `metadata`); the second part is the website data (usually `text/html`); and the remaining parts are up to 5 screenshots. Each part contains `Content-Type` and `Content-Disposition` headers, from which you can infer their file formats.
-- Not status 200: `application/json` response with an error message under the "error" key
+- Not status 200: `application/json` response with an error message under the "error" key if the error was handled properly, otherwise please open an issue
 
 Refer to the [client](client) for a full reference implementation, which shows you how to call the API and save the files it sends back. You can also save the returned files from the [command line](#from-the-command-line-on-maclinux).
 
@@ -110,9 +113,14 @@ You can control memory limits and other variables at the top of `scraper/worker.
 
 ```
 MEM_LIMIT_MB = 4_000  # 4 GB memory threshold for child scraping process
-MAX_SCREENSHOTS = 5
-SCREENSHOT_QUALITY = 85
-BROWSER_HEIGHT = 2000
-BROWSER_WIDTH = 1280
+MAX_CONCURRENT_TASKS = 3
+DEFAULT_SCREENSHOTS = 5  # The max number of screenshots if the user doesn't set a max
+MAX_SCREENSHOTS = 10  # User cannot set max_screenshots above this value
+DEFAULT_WAIT = 1000  # Value for wait if a user doesn't set one (ms)
+MAX_WAIT = 5000  # A user cannot ask for more than this long of a wait (ms)
+SCREENSHOT_QUALITY = 85  # Argument to PIL image save
+DEFAULT_BROWSER_DIM = [1280, 2000]  # If a user doesn't set browser dimensions  Width x Height in pixels
+MAX_BROWSER_DIM = [2400, 4000]  # Maximum width and height a user can set
+MIN_BROWSER_DIM = [100, 100]  # Minimum width and height a user can set
 USER_AGENT = "Mozilla/5.0 (compatible; Abbey/1.0; +https://github.com/US-Artificial-Intelligence/scraper)"
 ```

@@ -21,13 +21,21 @@ parser.add_argument('url', type=str, help='The URL to scrape')
 parser.add_argument('--api-key', type=str, default="", help='The API key for your server, if set')
 parser.add_argument('--out', type=str, default='output', help='The folder where output files should be stored (ideally blank)')
 parser.add_argument('--img-type', type=str, default='jpeg', help='Image type for screenshots: jpeg, png, or webp')
+parser.add_argument('--max-screenshots', type=int, default=None, help='The maximum number of screenshots that will be returned for a webpage')
+parser.add_argument('--wait', type=int, default=None, help='The amount of time the browser will wait to take a screenshot after scrolling to each location')
+parser.add_argument('--dim', type=int, nargs=2, default=None, help='The width and height of the browser when it takes a screenshot')
 
 args = parser.parse_args()
 
 OUTFOLDER = args.out
 
 data = {
-    'url': args.url  # Like https://goodreason.ai
+    'url': args.url,  # Like https://goodreason.ai
+    **{k: v for k, v in {
+        'browser_dim': args.dim,
+        'wait': args.wait,
+        'max_screenshots': args.max_screenshots
+    }.items() if v is not None}
 }
 headers = {
     'Authorization': f'Bearer {args.api_key}',  # Optional: if you're using an API key

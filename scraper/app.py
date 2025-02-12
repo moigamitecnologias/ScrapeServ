@@ -6,7 +6,7 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 import os
-from worker import scrape_task
+from worker import scrape_task, MAX_BROWSER_DIM, MIN_BROWSER_DIM, DEFAULT_BROWSER_DIM, DEFAULT_WAIT, MAX_SCREENSHOTS, MAX_WAIT, DEFAULT_SCREENSHOTS
 import json
 import mimetypes
 
@@ -115,8 +115,26 @@ def scrape():
     if not url_is_safe(url):
         return jsonify({'error': 'URL was judged to be unsafe'}), 400
 
-    wait = max(min(int(request.json.get('wait', 1000)), 5000), 0)  # Clamp between 0-5000ms
+    wait = request.json.get('wait', DEFAULT_WAIT)
+    n_screenshots = request.json.get('max_screenshots', DEFAULT_SCREENSHOTS)
+    browser_dim = request.json.get('browser_dim', DEFAULT_BROWSER_DIM)
 
+    if wait < 0 or wait > MAX_WAIT:
+        return jsonify({
+            'error': f'Value {wait} for "wait" is unacceptable; must be between 0 and {MAX_WAIT}'
+        }), 400
+    
+    for i, name in enumerate(['width', 'height']):
+        if browser_dim[i] > MAX_BROWSER_DIM[i] or browser_dim[i] < MIN_BROWSER_DIM[i]:
+            return jsonify({
+                'error': f'Value {browser_dim[i]} for browser {name} is unacceptable; must be between {MIN_BROWSER_DIM[i]} and {MAX_BROWSER_DIM[i]}'
+            }), 400
+        
+    if n_screenshots > MAX_SCREENSHOTS:
+        return jsonify({
+                'error': f'Value {n_screenshots} for max_screenshots is unacceptable; must be below {MAX_SCREENSHOTS}'
+            }), 400
+    
     # Determine the image format from the Accept header
     accept_header = request.headers.get('Accept', 'image/jpeg')
     accepted_formats = {
@@ -137,7 +155,7 @@ def scrape():
     content_file = None
     try:
         status, headers, content_file, screenshot_files, metadata = scrape_task.apply_async(
-            args=[url, wait, image_format], kwargs={}
+            args=[url, wait, image_format, n_screenshots, browser_dim], kwargs={}
         ).get(timeout=60)  # 60 seconds
         headers = {str(k).lower(): v for k, v in headers.items()}  # make headers all lowercase (they're case insensitive)
     except Exception as e:
