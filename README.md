@@ -27,10 +27,30 @@ This web scraper is resource intensive but higher quality than many alternatives
 
 You should have Docker and `docker compose` installed.
 
+### Easy (using pre-built image)
+
+A pre-built image is available for your use called `usaiinc/scraper`. You can use it with `docker compose` by creating a file called `docker-compose.yml` and putting the following inside it:
+
+```
+services:
+  scraper:
+    image: usaiinc/scraper:latest
+    ports:
+      - 5006:5006
+    # volumes:
+    #   - ./.env:/app/.env
+```
+
+Then you can run it by running `docker compose up` in the same directory as your file. See the [Usage](#usage) section below on how to interact with the server!
+
+### Customizable (build from source)
+
+Another option is to clone the repo and build it yourself, which is also quite easy! This will also let you modify server settings like memory usage, the maximum length of the queue, and other default configurations.
+
 1. Clone this repo
 2. Run `docker compose up` (a `docker-compose.yml` file is provided for your use)
 
-...and the service will be available at `http://localhost:5006`. See the Usage section below for details on how to interact with it.
+...and the service will be available at `http://localhost:5006`. See the [Usage](#usage) section below for details on how to interact with it.
 
 ## Usage
 
@@ -105,11 +125,11 @@ SCRAPER_API_KEY_OTHER=can-also-be-used
 SCRAPER_API_KEY_3=works-too
 ```
 
-API keys are sent to the service using the Authorization Bearer scheme.
+API keys are sent to the service using the [Authorization Bearer](https://swagger.io/docs/specification/v3_0/authentication/bearer-authentication/) scheme.
 
 ## Other Configuration
 
-You can control memory limits and other variables at the top of `scraper/worker.py`. Here are the defaults:
+You can control memory limits and other variables at the top of `scraper/worker.py` (provided you're building from source). Here are the defaults:
 
 ```
 MEM_LIMIT_MB = 4_000  # 4 GB memory threshold for child scraping process
