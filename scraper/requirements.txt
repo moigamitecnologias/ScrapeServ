@@ -7,3 +7,4 @@ gevent
 redis
 pillow
 boto3
+Flask-Cors

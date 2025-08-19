@@ -10,9 +10,11 @@ from worker import scrape_task, MAX_BROWSER_DIM, MIN_BROWSER_DIM, DEFAULT_BROWSE
 import json
 import mimetypes
 import boto3
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)  # Habilita CORS para todas as rotas
 
 """
 
