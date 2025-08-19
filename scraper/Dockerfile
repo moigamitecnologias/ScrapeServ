@@ -18,7 +18,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Playwright and Flask
-COPY scraper/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip3 install --no-cache-dir -r /app/requirements.txt
 
 # Install Playwright dependencies
@@ -31,11 +31,11 @@ RUN playwright install firefox
 WORKDIR /app
 
 # Copy your Flask application code into the container
-COPY scraper /app
+COPY . /app
 
 # Expose the port the app runs on
 EXPOSE 5006
 
-COPY scraper/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
