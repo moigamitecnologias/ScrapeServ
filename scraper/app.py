@@ -9,6 +9,7 @@ import os
 from worker import scrape_task, MAX_BROWSER_DIM, MIN_BROWSER_DIM, DEFAULT_BROWSER_DIM, DEFAULT_WAIT, MAX_SCREENSHOTS, MAX_WAIT, DEFAULT_SCREENSHOTS
 import json
 import mimetypes
+import boto3
 
 
 app = Flask(__name__)
@@ -166,50 +167,41 @@ def scrape():
     successful = True if content_file else False
 
     if successful:
-        boundary = 'Boundary712sAM12MVaJff23NXJ'  # typed out some random digits
-        # Generate a mixed multipart response
-        # See details on the standard here: https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
-        def stream():
-            # Start with headers and status as json
-            # JSON part with filename
-            filename = "info.json"
-            yield (
-                f"--{boundary}\r\n"
-                "Content-Type: application/json\r\n"
-                f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n\r\n"
-            ).encode()
-            yield json.dumps({'status': status, 'headers': headers, 'metadata': metadata}).encode()
+        try:
+            # 1. Obtenha o nome do seu bucket S3 de uma variável de ambiente
+            bucket_name = os.getenv('S3_BUCKET_NAME')
+            s3_client = boto3.client('s3')
+            uploaded_urls = []
 
-            # Main content (HTML/other)
-            ext = get_ext_from_content_type(headers['content-type'])
-            filename = f"main{ext}"
-            yield (
-                f"\r\n--{boundary}\r\n"
-                f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n"
-                "Content-Transfer-Encoding: binary\r\n"
-                f"Content-Type: {headers['content-type']}\r\n\r\n"
-            ).encode()
-            with open(content_file, 'rb') as content:
-                while chunk := content.read(4096):
-                    yield chunk
+            # 2. Iterar sobre os arquivos de screenshot
+            for i, ss_path in enumerate(screenshot_files):
+                # Gere um nome de arquivo único para o S3
+                import uuid
+                object_name = f"screenshots/{uuid.uuid4()}.png"
+                
+                # Faça o upload do arquivo para o S3
+                s3_client.upload_file(ss_path, bucket_name, object_name)
+                
+                # Construa a URL do objeto e adicione à lista
+                location = s3_client.get_bucket_location(Bucket=bucket_name)['LocationConstraint']
+                url = f"https://{bucket_name}.s3.{location}.amazonaws.com/{object_name}"
+                uploaded_urls.append(url)
 
-            # Screenshots (correct MIME type)
-            for i, ss in enumerate(screenshot_files):
-                filename = f"ss{i}.{image_format}"
-                yield (
-                    f"\r\n--{boundary}\r\n"
-                    f"Content-Disposition: attachment; name=\"{filename}\"; filename=\"{filename}\"\r\n"
-                    "Content-Transfer-Encoding: binary\r\n"
-                    f"Content-Type: image/{image_format}\r\n\r\n"
-                ).encode()
-                with open(ss, 'rb') as content:
-                    while chunk := content.read(4096):
-                        yield chunk
+                # Apague o arquivo temporário localmente
+                os.remove(ss_path)
 
-            # Final boundary
-            yield f"\r\n--{boundary}--\r\n".encode()
+            # 3. Retorne uma resposta JSON com as URLs
+            return jsonify({
+                "success": True,
+                "screenshot_urls": uploaded_urls,
+                "metadata": metadata
+            }), 200
 
-        return stream(), 200, {'Content-Type': f'multipart/mixed; boundary={boundary}'}
+        except Exception as e:
+            print(f"Erro ao fazer upload ou retornar URLs: {e}", file=sys.stderr, flush=True)
+            return jsonify({
+                'error': 'Erro no upload para o S3 ou na resposta da API.'
+            }), 500
 
     else:
         return jsonify({
